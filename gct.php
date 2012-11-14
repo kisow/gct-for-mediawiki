@@ -19,7 +19,7 @@ if(! defined( 'MEDIAWIKI' ) ) {
   $wgExtensionCredits['parserhook'][] = array(
     'name' => 'google chart tools (javascript)',
     'author' =>'kisow',
-    'url' => 'https://github.com/kisow/gct.git'
+    'url' => 'https://github.com/kisow/gct.git',
     'description' => 'this is an extension to use google chart tools in your wiki easily.'
     );
 }
