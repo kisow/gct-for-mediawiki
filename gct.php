@@ -157,3 +157,5 @@ EOT;
 
 	return $retval;
 }
+
+// vim: ts=4 sw=4
