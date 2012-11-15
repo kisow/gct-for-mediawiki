@@ -37,16 +37,16 @@ function gctInit() {
   global $title;
   global $div_id;
   global $type;
-  global $haxis_title;
-  global $vaxis_title;
+  global $haxis;
+  global $vaxis;
   global $options;
   
   $size = array("900", "500");
   $title = "";
   $div_id = uniqid();
   $type = "LineChart";
-  $haxis_title = "";
-  $vaxis_title = "";
+  $haxis = "";
+  $vaxis = "";
   $options = "";
 }
 
@@ -54,8 +54,8 @@ function gctArgsParseCommon ( $args ) {
 	global $size;
 	global $title;
 	global $type;
-	global $haxis_title;
-	global $vaxis_title;
+	global $haxis;
+	global $vaxis;
 	global $options;
 
 	if (is_null($args)) return;
@@ -71,11 +71,11 @@ function gctArgsParseCommon ( $args ) {
 			case "type":
 				$type = $value;
 			break;
-			case "haxis_title":
-				$haxis_title = $value;
+			case "haxis":
+				$haxis = $value;
 			break;
-			case "vaxis_title":
-				$vaxis_title = $value;
+			case "vaxis":
+				$vaxis = $value;
 			break;
 			case "options":
 				$options = $value;
@@ -89,54 +89,58 @@ function gctParser( $input, $args, $parser ) {
 	global $title;
 	global $div_id;
 	global $type;
-	global $haxis_title;
-	global $vaxis_title;
+	global $haxis;
+	global $vaxis;
 	global $options;
 
 	gctInit();
 	gctArgsParseCommon($args);
 
+	$data_str = "\n";
 	$fieldsep = ",";
 	$lines = explode ("\n",$input); 
 	foreach($lines as $line) {
 		if ($line != "") {
-			$data[] = explode($fieldsep,$line);
+			if (strlen($data_str) > 1) {
+				$data_str = $data_str . ",";
+			}
+			$data_str = $data_str . "[" . $line . "]\n";
 		}
 	}
 
-	$data_str = "";
-	$startcol = 0;
-	$startrow = 0;
-	for ($i = $startrow; $i < count($data); $i++) {
-		if ($i != $startrow) $data_str = $data_str . ",";
-		$data_str = $data_str . "[";
-		for ($j = $startcol; $j < count($data[0]); $j++) {
-			if ($j != $startrow) $data_str = $data_str . ",";
-			if ($i == $startcol) {
-				$data_str = $data_str . "'" . $data[$i][$j] . "'"; 
-			} else {
-				$data_str = $data_str . $data[$i][$j]; 
-			}
-		} 
-		$data_str = $data_str . "]\n";
-	}
-	$hAxisTitle = $data[0][0];
-
 	$options_str = "title: '$title'";
-	if ($haxis_title != "") {
-		$options_str = $options_str . ", hAxis: {title: '$haxis_title', titleTextStyle: {color:'red'}}";
+	if ($haxis != "") {
+		$options_str = $options_str . ", hAxis: {title: '$haxis', titleTextStyle: {color:'red'}}";
 	}
-	if ($vaxis_title != "") {
-		$options_str = $options_str . ", vAxis: {title: '$vaxis_title', titleTextStyle: {color:'red'}}";
+	if ($vaxis != "") {
+		$options_str = $options_str . ", vAxis: {title: '$vaxis', titleTextStyle: {color:'red'}}";
 	}
 	if ($options != "") {
 		$options_str = "$options";
 	}
 
+	switch ($type) {
+		case "Gauge":
+			$package = "gauge";
+			break;
+		case "GeoChart":
+			$package = "geochart";
+			break;
+		case "Table":
+			$package = "table";
+			break;
+		case "TreeMap":
+			$package = "treemap";
+			break;
+		default:
+			$package = "corechart";
+			break;
+	}
+
 	$script = <<<EOT
 		<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 		<script type="text/javascript">
-		google.load("visualization", "1", {packages:["corechart"]});
+		google.load("visualization", "1", {packages:['$package']});
 		google.setOnLoadCallback(drawChart);
 		function drawChart() {
 			var data = google.visualization.arrayToDataTable([$data_str]);
@@ -146,9 +150,6 @@ function gctParser( $input, $args, $parser ) {
 		}
 	</script>
 EOT;
-
-	// 미리보기 화면에서 출력되도록 
-	print "$script";
 
 	$retval = <<<EOT
 		$script
